@@ -44,14 +44,21 @@ from app.models.user import (
 
 
 def add_default_hosts(db: Session, inbounds: List[Inbound]):
-    hosts = [
-        InboundHost(
-            remark="🚀 Marz ({USERNAME}) [{PROTOCOL} - {TRANSPORT}]",
-            address="{SERVER_IP}",
-            inbound=i,
+    hosts = []
+    for i in inbounds:
+        # Use node address for remote nodes, {SERVER_IP} placeholder for local
+        if i.node and i.node.address and i.node.address not in ("127.0.0.1", "localhost"):
+            address = i.node.address
+        else:
+            address = "{SERVER_IP}"
+
+        hosts.append(
+            InboundHost(
+                remark="🚀 Marz ({USERNAME}) [{PROTOCOL} - {TRANSPORT}]",
+                address=address,
+                inbound=i,
+            )
         )
-        for i in inbounds
-    ]
     db.add_all(hosts)
     db.commit()
 
