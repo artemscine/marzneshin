@@ -33,7 +33,8 @@ from app.config.env import (
     CLASH_SUBSCRIPTION_TEMPLATE,
     SUBSCRIPTION_PAGE_TEMPLATE,
 )
-from app.db import GetDB
+from sqlalchemy.orm import Session
+
 from app.db.crud import get_hosts_for_user
 from app.models.proxy import (
     InboundHostSecurity,
@@ -75,9 +76,12 @@ handlers_templates = {
 
 
 def generate_subscription_template(
-    db_user, subscription_settings: SubscriptionSettings
+    db: Session,
+    db_user,
+    subscription_settings: SubscriptionSettings,
 ):
     links = generate_subscription(
+        db=db,
         user=db_user,
         config_format="links",
         use_placeholder=not db_user.is_active
@@ -92,6 +96,7 @@ def generate_subscription_template(
 
 
 def generate_subscription(
+    db: Session,
     user: "UserResponse",
     config_format: Literal["links", "xray", "clash-meta", "clash", "sing-box"],
     as_base64: bool = False,
@@ -126,6 +131,7 @@ def generate_subscription(
 
     else:
         configs = generate_user_configs(
+            db,
             user.inbounds,
             user.key,
             user.id,
@@ -237,6 +243,7 @@ def setup_format_variables(extra_data: dict) -> dict:
 
 
 def generate_user_configs(
+    db: Session,
     inbounds: list,
     key: str,
     user_id: int,
@@ -246,8 +253,7 @@ def generate_user_configs(
     salt = secrets.token_hex(8)
     configs = []
 
-    with GetDB() as db:
-        hosts = get_hosts_for_user(db, user_id)
+    hosts = get_hosts_for_user(db, user_id)
 
     for host in hosts:
         chained_hosts = [c.chained_host for c in host.chain]

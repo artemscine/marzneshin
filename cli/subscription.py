@@ -66,7 +66,7 @@ def get_config(
             utils.get_user(db, username)
         )
         conf: str = generate_subscription(
-            user=user, config_format=config_format.name, as_base64=as_base64
+            db, user=user, config_format=config_format.name, as_base64=as_base64
         )
 
         if output_file:
