@@ -565,7 +565,9 @@ def get_user_usages(
 
     for node_id, rows in usages.items():
         node_usages = UserNodeUsageSeries(
-            node_id=node_id, node_name=node_id_names[node_id], usages=[]
+            node_id=node_id,
+            node_name=node_id_names.get(node_id, f"Unknown Node {node_id}"),
+            usages=[],
         )
         current = start.astimezone(timezone.utc).replace(
             minute=0, second=0, microsecond=0
