@@ -11,7 +11,7 @@ from starlette.websockets import WebSocketDisconnect, WebSocketState
 from grpclib.exceptions import StreamTerminatedError, GRPCError
 
 from app import marznode
-from app.db import crud, get_tls_certificate
+from app.db import crud, get_tls_certificate, GetDB
 from app.db.models import Node
 from app.dependencies import (
     DBDep,
@@ -91,16 +91,17 @@ async def node_logs(
     node_id: int,
     backend: str,
     websocket: WebSocket,
-    db: DBDep,
     include_buffer: bool = True,
 ):
     token = websocket.query_params.get("token", "") or websocket.headers.get(
         "Authorization", ""
     ).removeprefix("Bearer ")
-    admin = get_admin(db, token)
 
-    if not admin or not admin.is_sudo:
-        return await websocket.close(reason="You're not allowed", code=4403)
+    with GetDB() as db:
+        admin = get_admin(db, token)
+
+        if not admin or not admin.is_sudo:
+            return await websocket.close(reason="You're not allowed", code=4403)
 
     if not marznode.nodes.get(node_id):
         return await websocket.close(reason="Node not found", code=4404)
